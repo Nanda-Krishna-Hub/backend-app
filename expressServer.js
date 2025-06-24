@@ -14,7 +14,9 @@ const authRoutes = require('./routes/authRoutes')
 const app = express();
 const config = require('./config/config');
 
-mongoose.connect('mongodb://localhost:27017/backend-app').then(() => console.log("Database connected successfully")).catch((err) => console.log("MongoDB connection error: ", err))
+mongoose.connect(config.mongo_url)
+    .then(() => console.log("✅ Connected to MongoDB Atlas"))
+    .catch((err) => console.error("MongoDB connection error:", err));
 
 
 
