@@ -4,6 +4,7 @@ const config = require('../config/config')
 
 
 const sendEmail = async (to, subject, html) => {
+    try{
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -20,8 +21,12 @@ const sendEmail = async (to, subject, html) => {
     };
     
     await transporter.sendMail(mailOptions);
+    }
+    catch(err){
+        console.error("❌ Email send error:", err.stack);
+    }
 };
 
-module.exports = sendEmail;
+module.exports = sendEmail
 
 

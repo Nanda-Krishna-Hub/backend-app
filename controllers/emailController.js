@@ -1,19 +1,20 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const config = require('../config/config')
+const config = require('../config/config');
+const {verifyEmailToken} = require('../Services/tokenService')
+const appError = require('../utils/AppError')
 
-const verifyEmail = async (req, res) => {
+const verifyEmail = async (req, res, next) => {
     try {
-        const decoded = jwt.verify(req.params.token, config.jwtsecret);
+        const decoded = verifyEmailToken(req.params.token);
         console.log("user clicked")
-        await User.findByIdAndUpdate(decoded.id, { isVerified: true });
+        await User.findByIdAndUpdate(decoded.Id, { isVerified: true });
         return res.send("Email verified successfully");
     }
     catch (err) {
-        return res.status(400).send("Invalid or expired verification link")
+        next(err)
     }
 }
-
 
 module.exports = {verifyEmail}

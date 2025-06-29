@@ -14,6 +14,7 @@ const passwordController = require('../controllers/passwordController');
 const tokenController = require('../controllers/tokenController');
 const emailController = require('../controllers/emailController');
 const app = express();
+const redis = require('../utils/redisClient')
 
 app.use(express.json());
 

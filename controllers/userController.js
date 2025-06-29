@@ -4,8 +4,8 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const sendEmail = require('../utils/sendEmail')
 const bcrypt = require('bcryptjs');
-const generateToken = require('../utils/generateToken');
 const config = require('../config/config')
+const redis = require('../utils/redisClient')
 
 
 const getAllUsers = async (req, res) => {
@@ -30,23 +30,37 @@ const getUsersPagination = async (req, res) => {
     const query = {};
     if (name) query.name = { $regex: name, $options: 'i' }
     if (email) query.email = { $regex: email, $options: 'i' };
+    const redisKey = `users:${JSON.stringify(req.query)}`;
+    console.log(redisKey)
+
     try {
+        const cached = await redis.get(redisKey);
+        if(cached){
+            // console.log("Users fetched from Redis cache");
+            return res.json(JSON.parse(cached))
+        }
         const users = await User.find(query).skip((page - 1) * limit).limit(Number(limit)).sort({ createdAt: -1 });
         const total = await User.countDocuments(query);
-        return res.json({ total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / limit), data: users });
-
+        const response = {total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / limit), data: users };
+        await redis.set(redisKey, JSON.stringify(response), 'EX', 60);
+        // console.log(JSON.stringify(response));
+        return res.json(response);
     }
     catch (err) {
-        return res.status(500).json({ message: "Error fetching details: ", error: err });
+        console.error("❌ Error in /users route:", err);
+        return res.status(500).json({ 
+        message: "Error fetching details",
+        error: err?.message || "Unknown error"
+    });
     }
 }
 
 const getUserData = (req, res) => {
-    return res.json({ message: "This is can be accessed by both user and admin" });
+    return res.json({ message: "Welcome Human" });
 }
 
 const getAdminData = (req, res) => {
-    return res.json({ message: "This is can be accessed by admin only" });
+    return res.json({ message: "Welcome Admin!" });
 }
 
 const getUserById = async (req, res) => {

@@ -1,8 +1,9 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const generateToken = require('../utils/generateToken');
-const sendEmail = require('../utils/sendEmail')
+
+const sendEmail = require('../utils/sendEmail');
+const { verifyAccessToken, generateAccessToken } = require('../Services/tokenService');
 
 const forgotPassword = async (req, res) => {
     console.log("Request body: ", req.body)
@@ -11,7 +12,7 @@ const forgotPassword = async (req, res) => {
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const token = generateToken({ userId: user._id }, config.jwtsecret, '15m');
+        const token = generateAccessToken(user);
 
         user.resetPasswordToken = token;
         user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
@@ -35,7 +36,7 @@ const resetPassword = async (req, res) => {
     const {token}  =req.params;
     const {newPassword} = req.body;
     try{
-        const decoded = jwt.verify(token, config.jwtsecret);
+        const decoded = verifyAccessToken(token);
         const user = await User.findById(decoded.userId);
         if(!user || user.resetPasswordToken !== token || user.resetPasswordExpires < Date.now()){
             return res.status(400).json({message: "Invalid or expired reset token"})
